@@ -6,6 +6,7 @@ import exceptions.AgentException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,9 +18,16 @@ public class Agent extends Thread{
     private final Thread counter;
     private final int port;
     private ServerSocket serverSocket;
+    private Socket socket;
     private InetAddress ip;
     private volatile boolean isStop;
 
+    /**
+     * Agent is a new thread that should store Counter thread, ServerListener thread and Socket thread
+     * @param initCount
+     * @param port
+     * @throws AgentException
+     */
 
     public Agent(int initCount, int port) throws AgentException {
         otherAgents = Collections.synchronizedList(new ArrayList<>());
@@ -40,7 +48,7 @@ public class Agent extends Thread{
     }
 
     public synchronized void startListen() throws IOException{
-        serverSocket.accept();
+
 
     }
 
@@ -61,4 +69,5 @@ public class Agent extends Thread{
     public synchronized void stopAgent() {
         isStop = true;
     }
+
 }

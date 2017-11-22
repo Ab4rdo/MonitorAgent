@@ -20,6 +20,10 @@ public class Counter implements Runnable {
     }
 
 
+    public synchronized void updateCounter(long millis) {
+        count = millis;
+    }
+
     public synchronized long getCount() {
         return count;
     }
