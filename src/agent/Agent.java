@@ -16,6 +16,7 @@ public class Agent extends Thread{
 
     private final List<Agent> otherAgents;
     private final Thread counter;
+    private final Thread listener;
     private final int port;
     private ServerSocket serverSocket;
     private Socket socket;
@@ -32,13 +33,14 @@ public class Agent extends Thread{
     public Agent(int initCount, int port) throws AgentException {
         otherAgents = Collections.synchronizedList(new ArrayList<>());
         counter = new Thread(new Counter(initCount));
+
         this.port = port;
         try {
             serverSocket = new ServerSocket(port);
         } catch (IOException e) {
             e.printStackTrace();
         }
-
+        listener = new Thread(new AgentListener(serverSocket));
         try {
             ip = InetAddress.getLocalHost();
         } catch (UnknownHostException e) {
@@ -48,14 +50,20 @@ public class Agent extends Thread{
     }
 
     public synchronized void startListen() throws IOException{
-
-
+        listener.run();
     }
 
 
     @Override
     public synchronized void start() {
+
         super.start();
+
+        try {
+            startListen();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -64,6 +72,10 @@ public class Agent extends Thread{
         while (!isStop) {
             counter.run();
         }
+    }
+
+    public InetAddress getSocketIp() {
+        return serverSocket.getInetAddress();
     }
 
     public synchronized void stopAgent() {

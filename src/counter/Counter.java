@@ -12,7 +12,7 @@ public class Counter implements Runnable {
     public void run() {
         try {
             Thread.sleep(1);
-            System.out.println(count);
+//            System.out.println(count);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
