@@ -1,85 +1,110 @@
 package agent;
 
+import agent.listener.AgentListener;
+import commands.Command;
 import counter.Counter;
-import exceptions.AgentException;
 
-import java.io.IOException;
 import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 public class Agent extends Thread{
 
-    private final List<Agent> otherAgents;
-    private final Thread counter;
-    private final Thread listener;
-    private final int port;
-    private ServerSocket serverSocket;
-    private Socket socket;
-    private InetAddress ip;
-    private volatile boolean isStop;
+
+    private int myPort;
+    private Counter counter;
+    private AgentListener listener;
+    private Thread client;
+    private volatile boolean isStoped;
+
+    public static void main(String args[]) {
+
+        if(args.length < 2) {
+            System.out.println("Invalid number of arguments");
+            System.exit(0);
+        }
+
+        int initCounter = Integer.parseInt(args[0]);
+        int myPort = Integer.parseInt(args[1]);
+
+        // creating agent
+        if(args.length==4) {
+            String hostname = args[2];
+            int hostPort = Integer.parseInt(args[3]);
+            try {
+                // starting normal agent
+                new Agent(initCounter, myPort, hostname, hostPort).start();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            try {
+                // starting introducing agent
+                new Agent(initCounter, myPort).start();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     /**
-     * Agent is a new thread that should store Counter thread, ServerListener thread and Socket thread
-     * @param initCount
-     * @param port
-     * @throws AgentException
+     * Constructor for introducing agent
+     * @param initCounter
+     * @param myPort
+     * @throws Exception
      */
+   public Agent(int initCounter, int myPort) throws Exception {
+       System.out.println("Created introducing agent");
+       this.myPort = myPort;
+       counter = new Counter(initCounter);
+       listener = new AgentListener(this);
+       isStoped = false;
+   }
 
-    public Agent(int initCount, int port) throws AgentException {
-        otherAgents = Collections.synchronizedList(new ArrayList<>());
-        counter = new Thread(new Counter(initCount));
-
-        this.port = port;
-        try {
-            serverSocket = new ServerSocket(port);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        listener = new Thread(new AgentListener(serverSocket));
-        try {
-            ip = InetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
-        isStop = false;
-    }
-
-    public synchronized void startListen() throws IOException{
-        listener.run();
-    }
+    /**
+     * Constructor for standard agent
+     * @param initCounter
+     * @param myPort
+     * @param hostname
+     * @param hostPort
+     * @throws Exception
+     */
+   public Agent(int initCounter, int myPort, String hostname, int hostPort) throws Exception{
+       System.out.println("Created agent");
+       this.myPort = myPort;
+       counter = new Counter(initCounter);
+       InetAddress myAddr = InetAddress.getLocalHost();
+       client = new Thread(new AgentClient(hostname, hostPort, myAddr, myPort));
+       isStoped = false;
+   }
 
 
     @Override
     public synchronized void start() {
-
         super.start();
-
-        try {
-            startListen();
-        } catch (IOException e) {
-            e.printStackTrace();
+        counter.start();
+        if(client != null) {
+            client.start();
+        } else {
+            listener.start();
         }
     }
 
     @Override
     public void run() {
-        super.run();
-        while (!isStop) {
-            counter.run();
-        }
+       while(!isStoped) {
+
+       }
     }
 
-    public InetAddress getSocketIp() {
-        return serverSocket.getInetAddress();
+    public synchronized int getMyPort() {
+        return myPort;
     }
 
-    public synchronized void stopAgent() {
-        isStop = true;
+    public synchronized long getCounterValue() {
+       return counter.getCount();
     }
 
+    public void setCounter(Counter counter) {
+        this.counter = counter;
+        counter.start();
+    }
 }

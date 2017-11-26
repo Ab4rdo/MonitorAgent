@@ -1,6 +1,6 @@
 package counter;
 
-public class Counter implements Runnable {
+public class Counter extends Thread {
 
     private volatile long count;
 
@@ -10,13 +10,15 @@ public class Counter implements Runnable {
 
     @Override
     public void run() {
-        try {
-            Thread.sleep(1);
-//            System.out.println(count);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        while(true) {
+            try {
+                Thread.sleep(1);
+//                System.out.println(count);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            count++;
         }
-        count++;
     }
 
 
